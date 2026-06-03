@@ -1,177 +1,127 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import Image from "next/image"
+import React, { useState } from 'react'
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { MdEmail } from "react-icons/md";
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import Link from 'next/link';
+import {
+    Alert,
+    AlertDescription,
+    AlertTitle,
+} from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
+import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
-export default function FriendsPage() {
-  const { data: session } = useSession()
-  const [friends, setFriends] = useState([])
-  const [search, setSearch] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+export default function Login() {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      setIsLoading(true)
-      fetch(`/api/friends?userId=${session.user.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            setError(data.error)
-            return
-          }
-          setFriends(data)
-          setError(null)
-        })
-        .catch((error) => {
-          console.error("Error fetching friends:", error)
-          setError("Failed to load friends. Please try again later.")
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+    const handleLogin = async () => {
+        try {
+            const res = await signIn("credentials", {
+                redirect: false,
+                email,
+                password,
+            })
+            console.log("res:", res);
+            // const data = await res.json();
+
+            if (res.status) {
+                console.log("res: ", res);
+                router.push("/")
+            }
+            else {
+                setError(true);
+                setErrorMessage(data.message);
+            }
+        } catch (error) {
+            console.log("error in logging in: ", error);
+            setError(true);
+            setErrorMessage("Something went wrong")
+        }
     }
-  }, [session])
 
-  const filteredFriends = friends?.filter(
-    (friend) =>
-      friend.firstname.toLowerCase().includes(search.toLowerCase()) ||
-      friend.lastname.toLowerCase().includes(search.toLowerCase()),
-  )
+    return (
+        <div className="min-h-screen bg-white flex justify-center items-center shadow-2xl">
+            <div className=" flex w-[80%] h-[80%] bg-blue-500 justify-center items-center rounded-2xl ">
 
-  const getInitials = (firstname, lastname) => {
-    return `${firstname?.charAt(0) || ""}${lastname?.charAt(0) || ""}`
-  }
+                <div className='bg-blue-500 w-[50%] h-ful'>
 
-  return (
-    <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-8 border border-gray-200">
-      {/* Society Name */}
-      <div className="text-center mb-6">
-        <h1 className="text-4xl font-extrabold text-blue-700">Greenwood Society</h1>
-        <p className="text-gray-600">A place to connect with your community</p>
-      </div>
-
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800">Members</h2>
-          <p className="text-gray-500">Connect with people in your society</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-            Gallery
-          </button>
-
-          {/* Search Input */}
-          <div className="relative w-full md:w-64">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search members..."
-              className="pl-10 w-full py-2 px-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Loading & Error Handling */}
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <svg
-            className="animate-spin h-8 w-8 text-blue-500"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <span className="ml-2 text-lg text-gray-500">Loading members...</span>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 p-4 rounded-lg text-center">
-          <p className="text-red-600">{error}</p>
-        </div>
-      ) : (
-        <>
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-500">
-              Showing {filteredFriends.length} of {friends.length} members
-            </p>
-          </div>
-
-          {/* Friends List */}
-          {filteredFriends.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredFriends.map((friend) => (
-                <div
-                  key={friend._id}
-                  className="overflow-hidden transition-all duration-300 hover:shadow-md rounded-lg border border-gray-200 bg-white"
-                >
-                  <div className="h-16 bg-gradient-to-r from-blue-100 to-blue-50"></div>
-                  <div className="p-4 pt-0 -mt-8">
-                    <div className="h-16 w-16 rounded-full border-4 border-white overflow-hidden relative">
-                      {friend.profileImage ? (
-                        <Image
-                          src={friend.profileImage || "/placeholder.svg"}
-                          alt={`${friend.firstname} ${friend.lastname}`}
-                          width={64}
-                          height={64}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-600 font-medium">
-                          {getInitials(friend.firstname, friend.lastname)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <h3 className="font-semibold text-lg text-gray-800">
-                        {friend.firstname} {friend.lastname}
-                      </h3>
-                      <p className="text-sm text-gray-500">{friend.phoneNumber}</p>
-
-                      <div className="flex justify-center mt-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Member
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              ))}
+                <div className='flex bg-gray-100 w-[50%] items-center justify-center rounded-r-xl py-8'>
+
+
+                    {/* form */}
+                    <div className='text-black flex flex-col items-center justify-center p-4 gap-4  w-[80%]' >
+                        <div className='flex flex-col justify-center items-center'>
+                            <div className='font-semibold text-2xl'>
+                                LOGIN
+                            </div>
+                            <div className='text-gray-400 text-lg'>
+                                Enter your info to LOGIN
+                            </div>
+                        </div>
+
+
+
+                        {/* email */}
+
+                        <div className='w-full'>
+                            <Label htmlFor="email" >Email</Label>
+                            <div className='flex border-[1px] rounded border-black items-center gap-2 px-2 bg-white text-black'>
+                                <MdEmail />
+                                <input type="email" placeholder="Email" className="w-full border-none outline-none focus:border-none focus:outline-none py-2"
+                                    onChange={(e) => {
+                                        setEmail(e.target.value)
+                                        setError(false)
+                                    }} />
+                            </div>
+                        </div>
+
+                        {/* password */}
+                        <div className='w-full'>
+                            <Label htmlFor="email" >password</Label>
+                            {/* <input type="password" placeholder="password" className="w-full pl-4 focus:outline-none py-2 border-[1px] border-black"
+                                onChange={(e) => {
+                                    setPassword(e.target.value)
+                                    setError(false)
+                                }} /> */}
+                            <div className='flex border-[1px] rounded border-black items-center gap-2 px-2 bg-white text-black'>
+                            <input type={showPassword ? "text" : "password"} placeholder="Password" className="w-full border-none outline-none py-2" value={password} onChange={(e) => { setError(false); setErrorMessage(""); setPassword(e.target.value) }} />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none">
+                                {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                            </button>
+                        </div>
+                        </div>
+
+                        {/* button */}
+                        <div>
+                            <Button className="bg-blue-500 hover:bg-blue-400" onClick={handleLogin}>Login</Button>
+                        </div>
+
+                        <div className="text-gray-500">Don&apos;t have an account? <Link href="/signup" className="text-blue-500 underline hover:text-blue-400">Sign up</Link> </div>
+
+                        {error &&
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>
+                                    {errorMessage}
+                                </AlertDescription>
+                            </Alert>
+                        }
+                    </div>
+                </div>
+
             </div>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-800">No members found</h3>
-              <p className="text-gray-500 mt-1">Try adjusting your search criteria</p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
+        </div>
+    )
 }
